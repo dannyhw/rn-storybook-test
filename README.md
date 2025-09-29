@@ -1,6 +1,6 @@
 # rn-storybook-test
 
-Test utilities for React Native Storybook, including automated screenshot testing with Maestro.
+Test utilities for React Native Storybook, including automated screenshot testing with Maestro or WebSocket (iOS Simulator).
 
 ## Installation
 
@@ -32,7 +32,7 @@ Options:
 
 ### `screenshot-stories`
 
-Take screenshots of all Storybook stories and compare them against baselines.
+Take screenshots of all Storybook stories using Maestro and compare them against baselines.
 
 ```bash
 npx rn-storybook-test screenshot-stories [options]
@@ -48,6 +48,39 @@ Options:
 - `--strict` - Use strict image comparison
 - `--skip-generate` - Skip generating maestro test file
 - `--skip-test` - Skip running maestro tests
+- `--skip-compare` - Skip comparing screenshots
+- `--update-baseline` - Copy current screenshots to baseline directory
+- `--html-report` - Generate HTML comparison report (when comparing)
+- `--ignore-regions <regions>` - Ignore custom regions (format: "x,y,w,h;x2,y2,w2,h2")
+
+### `screenshot-stories-ws`
+
+Take screenshots of all Storybook stories using WebSocket communication with iOS Simulator and compare them against baselines. This command doesn't require Maestro but only works with iOS Simulator.
+
+**Benefits:**
+- Automatically overrides iOS Simulator status bar with consistent values (time: 06:06, battery: 100%, wifi: 3 bars, cellular: 4 bars) to prevent false positives from changing battery levels, time, etc.
+- Works directly with iOS Simulator via WebSocket - no Maestro installation required
+- Faster screenshot capture using `xcrun simctl`
+
+```bash
+npx rn-storybook-test screenshot-stories-ws [options]
+```
+
+Options:
+
+- `-c, --config-dir <path>` - Path to Storybook config directory (default: ./.rnstorybook)
+- `-a, --app-id <id>` - App bundle ID (default: host.exp.Exponent)
+- `-b, --baseline-dir <path>` - Directory containing baseline screenshots (default: ./screenshots/baseline)
+- `-s, --screenshots-dir <path>` - Directory for new screenshots (default: ./screenshots/current)
+- `-d, --diffs-dir <path>` - Directory for diff images (default: ./screenshots/diffs)
+- `-t, --tolerance <number>` - Tolerance for image comparison (default: 2.5)
+- `--strict` - Use strict image comparison
+- `--host <host>` - WebSocket host (default: localhost)
+- `--port <port>` - WebSocket port (default: 7007)
+- `--secured` - Use WSS instead of WS
+- `--wait-time <ms>` - Wait time before starting tests (default: 2000)
+- `--deep-link <url>` - Deep link URL to open after launching (useful for Expo Go)
+- `--skip-snapshot` - Skip taking screenshots
 - `--skip-compare` - Skip comparing screenshots
 - `--update-baseline` - Copy current screenshots to baseline directory
 - `--html-report` - Generate HTML comparison report (when comparing)
@@ -88,6 +121,8 @@ This command shows you a list of available diff images and lets you select one t
 
 ## Example Workflow
 
+### Using Maestro (iOS & Android)
+
 1. Take screenshots of all stories and set them as baseline:
 
 ```bash
@@ -112,7 +147,22 @@ npx rn-storybook-test screenshot-stories --update-baseline
 npx rn-storybook-test screenshot-stories --skip-generate
 ```
 
-Alternative workflow using separate commands:
+### Using WebSocket (iOS Simulator only)
+
+For iOS Simulator development, use the WebSocket-based command for faster iteration and consistent status bar:
+
+```bash
+# Take screenshots with status bar override and set as baseline
+npx rn-storybook-test screenshot-stories-ws --update-baseline
+
+# After making changes, compare against baseline
+npx rn-storybook-test screenshot-stories-ws
+
+# For Expo Go projects, use deep link
+npx rn-storybook-test screenshot-stories-ws --deep-link "exp://127.0.0.1:8081"
+```
+
+### Alternative workflow using separate commands
 
 ```bash
 # Take screenshots
@@ -124,11 +174,14 @@ npx rn-storybook-test compare-screenshots --update-baseline
 
 ## HTML Reports
 
-Both `screenshot-stories` and `compare-screenshots` commands support generating detailed HTML comparison reports with the `--html-report` flag:
+The `screenshot-stories`, `screenshot-stories-ws`, and `compare-screenshots` commands support generating detailed HTML comparison reports with the `--html-report` flag:
 
 ```bash
-# Generate HTML report when comparing screenshots
+# Generate HTML report when comparing screenshots (Maestro)
 npx rn-storybook-test screenshot-stories --html-report
+
+# Generate HTML report when comparing screenshots (WebSocket)
+npx rn-storybook-test screenshot-stories-ws --html-report
 
 # Or when running comparison separately
 npx rn-storybook-test compare-screenshots --html-report
