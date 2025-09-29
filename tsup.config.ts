@@ -5,6 +5,7 @@ export default defineConfig((options) => {
     entry: [
       "src/gen-maestro.ts",
       "src/screenshot-stories.ts",
+      "src/screenshot-stories-ws.ts",
       "src/compare-screenshots.ts",
       "src/detect-ignore-regions.ts",
     ],
@@ -14,6 +15,7 @@ export default defineConfig((options) => {
           entry: [
             "src/gen-maestro.ts",
             "src/screenshot-stories.ts",
+            "src/screenshot-stories-ws.ts",
             "src/compare-screenshots.ts",
             "src/detect-ignore-regions.ts",
           ],

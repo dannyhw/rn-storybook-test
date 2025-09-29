@@ -11,12 +11,14 @@ Usage: npx rn-storybook-test detect-ignore-regions [options]
 Interactively select a diff image to extract ignore regions from
 
 Options:
-  -d, --diffs-dir <path>         Directory containing diff images (default: ./.maestro/diffs)
+  -d, --diffs-dir <path>         Directory containing diff images (default: ./screenshots/diffs or ./.maestro/diffs)
+  -s, --screenshots-dir <path>   Directory containing screenshots (default: ./screenshots/current or ./.maestro/screenshots)
   -h, --help                     Show this help message
 
 Examples:
   npx rn-storybook-test detect-ignore-regions
   npx rn-storybook-test detect-ignore-regions --diffs-dir ./my-diffs
+  npx rn-storybook-test detect-ignore-regions -d ./screenshots/diffs -s ./screenshots/current
 
 This command shows you a list of available diff images and lets you select one
 to analyze. It will then extract the diff regions and provide you with the exact
@@ -165,7 +167,31 @@ async function analyzeDiffImage(
     const { PNG } = require('pngjs');
 
     const data = fs.readFileSync(diffPath);
-    const png = PNG.sync.read(data);
+
+    // Validate it's a PNG file
+    if (data.length < 8 || data[0] !== 0x89 || data[1] !== 0x50 || data[2] !== 0x4E || data[3] !== 0x47) {
+      throw new Error('File is not a valid PNG image');
+    }
+
+    let png: any;
+    try {
+      png = PNG.sync.read(data);
+    } catch (parseError: any) {
+      console.warn(`⚠️  PNG parsing failed: ${parseError.message}`);
+      console.log('💡 Trying alternative parsing method...');
+
+      // Try parsing with error tolerance
+      const tempPng = new PNG({ filterType: -1 });
+      await new Promise((resolve, reject) => {
+        tempPng.parse(data, (error: any, parsedData: any) => {
+          if (error) reject(error);
+          else {
+            png = parsedData;
+            resolve(parsedData);
+          }
+        });
+      });
+    }
 
     console.log(`📐 Image dimensions: ${png.width}x${png.height}`);
 
@@ -330,10 +356,12 @@ const run = async () => {
     process.exit(0);
   }
 
-  // Set defaults
-  const defaultDir = './.maestro';
-  const diffsDir = args['--diffs-dir'] || path.join(defaultDir, 'diffs');
-  const screenshotsDir = args['--screenshots-dir'] || path.join(defaultDir, 'screenshots');
+  // Set defaults - try WebSocket paths first, fallback to Maestro paths
+  const wsDefaultExists = existsSync('./screenshots/diffs');
+  const defaultBaseDir = wsDefaultExists ? './screenshots' : './.maestro';
+
+  const diffsDir = args['--diffs-dir'] || path.join(defaultBaseDir, 'diffs');
+  const screenshotsDir = args['--screenshots-dir'] || path.join(defaultBaseDir, defaultBaseDir === './screenshots' ? 'current' : 'screenshots');
 
   try {
     const resolvedDiffsDir = path.isAbsolute(diffsDir)
@@ -421,6 +449,9 @@ const run = async () => {
     console.log('Full example commands:');
     console.log(
       `npx rn-storybook-test screenshot-stories --ignore-regions "${regionsStr}"`
+    );
+    console.log(
+      `npx rn-storybook-test screenshot-stories-ws --ignore-regions "${regionsStr}"`
     );
     console.log(
       `npx rn-storybook-test compare-screenshots --ignore-regions "${regionsStr}"`
