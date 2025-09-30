@@ -17,9 +17,10 @@
     "type": "git",
     "url": "https://github.com/dannyhw/rn-storybook-test"
   },
-  "main": "dist/screenshot-stories.js",
+  "main": "dist/cli.js",
   "license": "MIT",
   "bin": {
+    "rn-storybook-test": "./dist/cli.js",
     "compare-screenshots": "./dist/compare-screenshots.js",
     "detect-ignore-regions": "./dist/detect-ignore-regions.js",
     "gen-maestro": "./dist/gen-maestro.js",

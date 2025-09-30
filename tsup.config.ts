@@ -3,6 +3,7 @@ import { defineConfig } from "tsup";
 export default defineConfig((options) => {
   return {
     entry: [
+      "src/cli.ts",
       "src/gen-maestro.ts",
       "src/screenshot-stories.ts",
       "src/screenshot-stories-ws.ts",
@@ -13,6 +14,7 @@ export default defineConfig((options) => {
     dts: !options.watch
       ? {
           entry: [
+            "src/cli.ts",
             "src/gen-maestro.ts",
             "src/screenshot-stories.ts",
             "src/screenshot-stories-ws.ts",
