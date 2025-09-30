@@ -1,6 +1,13 @@
-import { mkdirSync, readdirSync, existsSync, rmSync } from 'fs';
-import path from 'path';
-import { compare as odiffCompare, ODiffOptions } from 'odiff-bin';
+import {
+  mkdirSync,
+  readdirSync,
+  existsSync,
+  rmSync,
+  readFileSync,
+  writeFileSync,
+} from "fs";
+import path from "path";
+import { compare as odiffCompare, ODiffOptions } from "odiff-bin";
 
 export interface ComparisonOptions {
   screenshotsDir: string;
@@ -23,7 +30,7 @@ export interface ComparisonResult {
   missingBaselines: number;
   details: Array<{
     filename: string;
-    status: 'match' | 'differ' | 'missing-baseline';
+    status: "match" | "differ" | "missing-baseline";
     diffPath?: string;
   }>;
 }
@@ -48,14 +55,19 @@ async function compareWithOdiff(
   options: {
     tolerance: number;
     strict: boolean;
-    ignoreRegions?: Array<{ x: number; y: number; width: number; height: number }>;
+    ignoreRegions?: Array<{
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }>;
   }
 ): Promise<{ equal: boolean; diffPath?: string }> {
   try {
     const odiffOptions = {
       threshold: options.tolerance / 100, // Convert percentage to 0-1 range
       antialiasing: !options.strict,
-      diffColor: '#F0F',
+      diffColor: "#FF00FF",
       outputDiffMask: false,
       ...(options.ignoreRegions &&
         options.ignoreRegions.length > 0 && {
@@ -63,7 +75,12 @@ async function compareWithOdiff(
         }),
     } satisfies ODiffOptions;
 
-    const result = await odiffCompare(baselinePath, currentPath, diffPath, odiffOptions);
+    const result = await odiffCompare(
+      baselinePath,
+      currentPath,
+      diffPath,
+      odiffOptions
+    );
 
     return {
       equal: result.match,
@@ -75,7 +92,9 @@ async function compareWithOdiff(
   }
 }
 
-export async function compareScreenshots(options: ComparisonOptions): Promise<ComparisonResult> {
+export async function compareScreenshots(
+  options: ComparisonOptions
+): Promise<ComparisonResult> {
   const {
     screenshotsDir,
     baselineDir,
@@ -100,7 +119,8 @@ export async function compareScreenshots(options: ComparisonOptions): Promise<Co
 
   try {
     const screenshots = readdirSync(screenshotsDir).filter(
-      (file) => file.endsWith('.png') || file.endsWith('.jpg') || file.endsWith('.jpeg')
+      (file) =>
+        file.endsWith(".png") || file.endsWith(".jpg") || file.endsWith(".jpeg")
     );
 
     result.total = screenshots.length;
@@ -114,7 +134,7 @@ export async function compareScreenshots(options: ComparisonOptions): Promise<Co
         console.log(`⚠️  No baseline for: ${screenshot}`);
         return {
           filename: screenshot,
-          status: 'missing-baseline' as const,
+          status: "missing-baseline" as const,
         };
       }
 
@@ -129,7 +149,10 @@ export async function compareScreenshots(options: ComparisonOptions): Promise<Co
         const validRegions = ignoreRegions
           ? ignoreRegions.filter((region) => {
               const isValid =
-                region.x >= 0 && region.y >= 0 && region.width > 0 && region.height > 0;
+                region.x >= 0 &&
+                region.y >= 0 &&
+                region.width > 0 &&
+                region.height > 0;
               if (!isValid) {
                 console.warn(
                   `⚠️  Invalid ignore region: x=${region.x}, y=${region.y}, w=${region.width}, h=${region.height}`
@@ -139,31 +162,36 @@ export async function compareScreenshots(options: ComparisonOptions): Promise<Co
             })
           : [];
 
-        const comparisonResult = await compareWithOdiff(baselinePath, currentPath, diffPath, {
-          tolerance: comparisonOptions.tolerance,
-          strict: comparisonOptions.strict,
-          ignoreRegions: validRegions.length > 0 ? validRegions : undefined,
-        });
+        const comparisonResult = await compareWithOdiff(
+          baselinePath,
+          currentPath,
+          diffPath,
+          {
+            tolerance: comparisonOptions.tolerance,
+            strict: comparisonOptions.strict,
+            ignoreRegions: validRegions.length > 0 ? validRegions : undefined,
+          }
+        );
 
         if (!comparisonResult.equal) {
           console.log(`❌ ${screenshot}: Differs`);
           return {
             filename: screenshot,
-            status: 'differ' as const,
+            status: "differ" as const,
             diffPath: comparisonResult.diffPath,
           };
         } else {
           console.log(`✅ ${screenshot}: Match`);
           return {
             filename: screenshot,
-            status: 'match' as const,
+            status: "match" as const,
           };
         }
       } catch (error) {
         console.error(`Error comparing ${screenshot}:`, error);
         return {
           filename: screenshot,
-          status: 'differ' as const,
+          status: "differ" as const,
         };
       }
     };
@@ -173,29 +201,33 @@ export async function compareScreenshots(options: ComparisonOptions): Promise<Co
     // Process results
     comparisonResults.forEach((detail) => {
       result.details.push(detail);
-      if (detail.status === 'match') {
+      if (detail.status === "match") {
         result.matches++;
-      } else if (detail.status === 'differ') {
+      } else if (detail.status === "differ") {
         result.differences++;
-      } else if (detail.status === 'missing-baseline') {
+      } else if (detail.status === "missing-baseline") {
         result.missingBaselines++;
       }
     });
   } catch (error) {
-    console.error('Error reading screenshots:', error);
+    console.error("Error reading screenshots:", error);
     throw error;
   }
 
   return result;
 }
 
-export async function updateBaseline(screenshotsDir: string, baselineDir: string): Promise<void> {
-  console.log('Updating baseline screenshots...');
+export async function updateBaseline(
+  screenshotsDir: string,
+  baselineDir: string
+): Promise<void> {
+  console.log("Updating baseline screenshots...");
 
   mkdirSync(baselineDir, { recursive: true });
 
   const screenshots = readdirSync(screenshotsDir).filter(
-    (file) => file.endsWith('.png') || file.endsWith('.jpg') || file.endsWith('.jpeg')
+    (file) =>
+      file.endsWith(".png") || file.endsWith(".jpg") || file.endsWith(".jpeg")
   );
 
   for (const screenshot of screenshots) {
@@ -203,7 +235,7 @@ export async function updateBaseline(screenshotsDir: string, baselineDir: string
     const destPath = path.join(baselineDir, screenshot);
 
     // Use native Node.js copy
-    const { copyFileSync } = await import('fs');
+    const { copyFileSync } = await import("fs");
     copyFileSync(sourcePath, destPath);
     console.log(`📋 Copied: ${screenshot}`);
   }
@@ -214,19 +246,21 @@ export async function updateBaseline(screenshotsDir: string, baselineDir: string
 export function parseIgnoreRegions(
   regionsStr: string
 ): Array<{ x: number; y: number; width: number; height: number }> {
-  if (!regionsStr || regionsStr.trim() === '') {
+  if (!regionsStr || regionsStr.trim() === "") {
     return [];
   }
 
   try {
-    const regions = regionsStr.split(';').map((regionStr) => {
+    const regions = regionsStr.split(";").map((regionStr) => {
       const parts = regionStr
         .trim()
-        .split(',')
+        .split(",")
         .map((part) => parseInt(part.trim(), 10));
 
       if (parts.length !== 4 || parts.some(isNaN)) {
-        throw new Error(`Invalid region format: "${regionStr}". Expected "x,y,width,height"`);
+        throw new Error(
+          `Invalid region format: "${regionStr}". Expected "x,y,width,height"`
+        );
       }
 
       const [x, y, width, height] = parts;
@@ -236,14 +270,18 @@ export function parseIgnoreRegions(
     console.log(`🎯 Parsed ${regions.length} custom ignore regions:`);
     regions.forEach((region, index) => {
       console.log(
-        `   Region ${index + 1}: x=${region.x}, y=${region.y}, w=${region.width}, h=${region.height}`
+        `   Region ${index + 1}: x=${region.x}, y=${region.y}, w=${
+          region.width
+        }, h=${region.height}`
       );
     });
 
     return regions;
   } catch (error) {
     console.error(`❌ Error parsing ignore regions: ${error}`);
-    console.error(`💡 Expected format: "x,y,w,h;x2,y2,w2,h2" (semicolon-separated regions)`);
+    console.error(
+      `💡 Expected format: "x,y,w,h;x2,y2,w2,h2" (semicolon-separated regions)`
+    );
     return [];
   }
 }
@@ -265,7 +303,10 @@ export async function generateHtmlReport(
   options: ComparisonOptions
 ): Promise<string> {
   const { screenshotsDir, baselineDir, diffsDir } = options;
-  const reportPath = path.join(path.dirname(diffsDir), 'screenshot-comparison-report.html');
+  const reportPath = path.join(
+    path.dirname(diffsDir),
+    "screenshot-comparison-report.html"
+  );
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -612,7 +653,9 @@ export async function generateHtmlReport(
             </div>
             <div class="navigation">
                 <div class="nav-info">
-                    <span id="currentItem">1</span> of <span id="totalItems">${result.total}</span>
+                    <span id="currentItem">1</span> of <span id="totalItems">${
+                      result.total
+                    }</span>
                 </div>
                 <div class="nav-buttons">
                     <button class="nav-btn" id="prevBtn">← Previous</button>
@@ -631,8 +674,14 @@ export async function generateHtmlReport(
             const diffPath = detail.diffPath;
 
             // Convert absolute paths to relative paths for HTML
-            const relativeBaseline = path.relative(path.dirname(reportPath), baselinePath);
-            const relativeCurrent = path.relative(path.dirname(reportPath), currentPath);
+            const relativeBaseline = path.relative(
+              path.dirname(reportPath),
+              baselinePath
+            );
+            const relativeCurrent = path.relative(
+              path.dirname(reportPath),
+              currentPath
+            );
             const relativeDiff = diffPath
               ? path.relative(path.dirname(reportPath), diffPath)
               : null;
@@ -640,33 +689,36 @@ export async function generateHtmlReport(
             let statusClass: string;
             let statusText: string;
             switch (detail.status) {
-              case 'match':
-                statusClass = 'status-match';
-                statusText = '✅ Match';
+              case "match":
+                statusClass = "status-match";
+                statusText = "✅ Match";
                 break;
-              case 'differ':
-                statusClass = 'status-differ';
-                statusText = '❌ Different';
+              case "differ":
+                statusClass = "status-differ";
+                statusText = "❌ Different";
                 break;
-              case 'missing-baseline':
-                statusClass = 'status-missing';
-                statusText = '⚠️ Missing Baseline';
+              case "missing-baseline":
+                statusClass = "status-missing";
+                statusText = "⚠️ Missing Baseline";
                 break;
               default:
-                statusClass = 'status-missing';
-                statusText = '❓ Unknown';
+                statusClass = "status-missing";
+                statusText = "❓ Unknown";
                 break;
             }
 
-            const hasDiff = detail.status === 'differ' && diffPath && existsSync(diffPath);
+            const hasDiff =
+              detail.status === "differ" && diffPath && existsSync(diffPath);
 
             return `
-            <div class="comparison-item hidden" data-status="${detail.status}" data-index="${index}">
+            <div class="comparison-item hidden" data-status="${
+              detail.status
+            }" data-index="${index}">
                 <div class="comparison-header">
                     <div class="filename">${detail.filename}</div>
                     <div class="status-badge ${statusClass}">${statusText}</div>
                 </div>
-                <div class="images-container ${hasDiff ? 'with-diff' : ''}">
+                <div class="images-container ${hasDiff ? "with-diff" : ""}">
                     <div class="image-section">
                         <div class="image-label">Baseline</div>
                         <div class="image-container">
@@ -696,12 +748,12 @@ export async function generateHtmlReport(
                             <img src="${relativeDiff}" alt="Diff: ${detail.filename}">
                         </div>
                     </div>`
-                        : ''
+                        : ""
                     }
                 </div>
             </div>`;
           })
-          .join('')}
+          .join("")}
         </div>
     </div>
 
@@ -780,7 +832,7 @@ export async function generateHtmlReport(
 </body>
 </html>`;
 
-  const { writeFileSync } = await import('fs');
+  const { writeFileSync } = await import("fs");
   writeFileSync(reportPath, html);
 
   return reportPath;
