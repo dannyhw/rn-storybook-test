@@ -1,6 +1,6 @@
 {
   "name": "rn-storybook-test",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "commonjs",
   "description": "test utilities for react native storybook",
   "keywords": [
