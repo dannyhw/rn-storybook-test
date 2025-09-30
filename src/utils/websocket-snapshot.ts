@@ -302,7 +302,7 @@ export async function snapshotStorybookViaWebsocket(
         );
 
         // Small delay between screenshots to let things settle
-        await sleep(100);
+        // await sleep(50);
       }
     }
 
