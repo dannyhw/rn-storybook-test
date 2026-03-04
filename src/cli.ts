@@ -20,7 +20,7 @@ Usage: npx rn-storybook-test <command> [options]
 
 Commands:
   gen-maestro              Generate Maestro test files for Storybook stories
-  screenshot-stories       Take screenshots using Maestro and compare against baselines
+  screenshot-stories       Generate a Maestro assertScreenshot flow and optionally run it
   screenshot-stories-ws    Take screenshots using WebSocket (iOS Simulator only) and compare
   compare-screenshots      Compare screenshots against baseline images
   detect-ignore-regions    Interactively extract ignore regions from diff images

@@ -1,9 +1,9 @@
 import "websocket-polyfill";
 import { Channel, WebsocketTransport } from "storybook/internal/channels";
 import Events from "storybook/internal/core-events";
+import type { IndexEntry } from "storybook/internal/types";
 import { execSync, type ExecSyncOptions } from "child_process";
 import { WebSocketServer } from "ws";
-import type { IndexEntry } from "storybook/internal/types";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -13,7 +13,7 @@ const exec = (
   {
     errorMessage,
     ignoreError,
-  }: { errorMessage?: string; ignoreError?: boolean } = {}
+  }: { errorMessage?: string; ignoreError?: boolean } = {},
 ) => {
   try {
     return execSync(command, options);
@@ -46,7 +46,7 @@ interface SimulatorData {
 
 export const bootBestSimulator = (): string => {
   const { devices }: SimulatorData = JSON.parse(
-    exec("xcrun simctl list devices --json", { encoding: "utf8" }) as string
+    exec("xcrun simctl list devices --json", { encoding: "utf8" }) as string,
   );
 
   const availableDevices = Object.values(devices)
@@ -110,7 +110,7 @@ export interface WebsocketSnapshotOptions {
 }
 
 export async function snapshotStorybookViaWebsocket(
-  options: WebsocketSnapshotOptions
+  options: WebsocketSnapshotOptions,
 ): Promise<void> {
   const {
     entries,
@@ -151,7 +151,7 @@ export async function snapshotStorybookViaWebsocket(
         try {
           const json = JSON.parse(data.toString());
           wss.clients.forEach((wsClient) =>
-            wsClient.send(JSON.stringify(json))
+            wsClient.send(JSON.stringify(json)),
           );
         } catch (error) {
           console.log("error parsing message", data.toString());
@@ -181,7 +181,7 @@ export async function snapshotStorybookViaWebsocket(
       transport: new WebsocketTransport({
         url,
         page: "manager",
-        onError: (error) => console.error("channel error", error),
+        onError: (error: unknown) => console.error("channel error", error),
       }),
     });
 
@@ -227,7 +227,7 @@ export async function snapshotStorybookViaWebsocket(
 
     async function setStoryWithRetry(
       entry: IndexEntry,
-      maxRetries: number = 3
+      maxRetries: number = 3,
     ): Promise<void> {
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
@@ -239,8 +239,8 @@ export async function snapshotStorybookViaWebsocket(
               channel.removeListener(Events.STORY_RENDERED, onStoryRendered);
               reject(
                 new Error(
-                  `story not set/rendered after 5000ms (attempt ${attempt}/${maxRetries})`
-                )
+                  `story not set/rendered after 5000ms (attempt ${attempt}/${maxRetries})`,
+                ),
               );
             }, 5000);
 
@@ -273,12 +273,12 @@ export async function snapshotStorybookViaWebsocket(
           return;
         } catch (error) {
           console.log(
-            `⚠️  Attempt ${attempt}/${maxRetries} failed for ${entry.title} - ${entry.name}`
+            `⚠️  Attempt ${attempt}/${maxRetries} failed for ${entry.title} - ${entry.name}`,
           );
 
           if (attempt === maxRetries) {
             console.error(
-              `❌ Failed to set story after ${maxRetries} attempts: ${entry.title} - ${entry.name}`
+              `❌ Failed to set story after ${maxRetries} attempts: ${entry.title} - ${entry.name}`,
             );
             throw error;
           }
@@ -298,7 +298,7 @@ export async function snapshotStorybookViaWebsocket(
 
         const screenshotPath = `${screenshotsDir}/${entry.id}.png`;
         exec(
-          `xcrun simctl io booted screenshot --type png "${screenshotPath}"`
+          `xcrun simctl io booted screenshot --type png "${screenshotPath}"`,
         );
 
         // Small delay between screenshots to let things settle

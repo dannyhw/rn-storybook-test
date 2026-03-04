@@ -1,6 +1,6 @@
 import { writeFileSync, mkdirSync } from "fs";
 import path from "path";
-import { StoryIndex } from "storybook/internal/types";
+import type { StoryIndex } from "storybook/internal/types";
 
 export interface MaestroGeneratorOptions {
   index: StoryIndex;
@@ -9,10 +9,14 @@ export interface MaestroGeneratorOptions {
   baseUri: string;
   testName: string;
   screenshotsRelativePath?: string;
+  selectStorySync?: boolean;
+  host?: string;
+  port?: number;
+  secured?: boolean;
 }
 
 export async function generateMaestroTest(
-  options: MaestroGeneratorOptions
+  options: MaestroGeneratorOptions,
 ): Promise<boolean> {
   const {
     index,
@@ -21,6 +25,10 @@ export async function generateMaestroTest(
     baseUri,
     testName,
     screenshotsRelativePath = "screenshots",
+    selectStorySync = false,
+    host = "localhost",
+    port = 7007,
+    secured = false,
   } = options;
 
   try {
@@ -31,7 +39,7 @@ export async function generateMaestroTest(
     const stories = Object.values(index.entries)
       .filter(
         (entry) =>
-          entry.type === "story" && !entry.tags?.includes("skip-screenshot")
+          entry.type === "story" && !entry.tags?.includes("skip-screenshot"),
       )
       .map((story) => ({
         id: story.id,
@@ -40,29 +48,77 @@ export async function generateMaestroTest(
 
     if (stories.length === 0) {
       console.warn(
-        "No stories found. Make sure your Storybook config directory is correct."
+        "No stories found. Make sure your Storybook config directory is correct.",
       );
       return false;
     }
 
     console.log(`Found ${stories.length} stories`);
 
-    const maestroContent = `appId: ${appId}
-name: Take screenshots of all Storybook stories
----
-- stopApp: ${appId}
+    const selectStorySyncScriptName = `${testName}.select-story-sync.js`;
+    const scriptPath = path.join(outputDir, selectStorySyncScriptName);
 
-${stories
-  .map(
-    (story) => `# Story ${story.name}
+    if (selectStorySync) {
+      const selectStorySyncScript = `const storyId = STORY_ID;
+const host = STORYBOOK_HOST;
+const port = STORYBOOK_PORT;
+const secured = STORYBOOK_SECURED === 'true';
+const protocol = secured ? 'https' : 'http';
+const endpoint = \`\${protocol}://\${host}:\${port}/select-story-sync/\${encodeURIComponent(storyId)}\`;
+const response = http.get(endpoint);
+
+if (!(response.status >= 200 && response.status < 300)) {
+  throw new Error(\`Failed to select story "\${storyId}" (status \${response.status})\`);
+}
+`;
+
+      writeFileSync(scriptPath, selectStorySyncScript);
+      console.log(`✅ Generated Maestro script: ${scriptPath}`);
+    }
+
+    const storiesFlow = stories
+      .map((story) => {
+        const screenshotName = story.name.replace(/ /g, "-");
+        const screenshotPath = `${screenshotsRelativePath}/${screenshotName}.png`;
+
+        if (!selectStorySync) {
+          return `# Story ${story.name}
 - openLink: '${baseUri}?STORYBOOK_STORY_ID=${story.id}'
 - waitForAnimationToEnd
 - assertVisible:
     id: '${story.id}'
-- takeScreenshot: '${screenshotsRelativePath}/${story.name.replace(/ /g, "-")}'
+- assertScreenshot: '${screenshotPath}'
+`;
+        }
+
+        return `# Story ${story.name}
+- runScript:
+    file: '${selectStorySyncScriptName}'
+    env:
+      STORY_ID: '${story.id}'
+      STORYBOOK_HOST: '${host}'
+      STORYBOOK_PORT: '${port}'
+      STORYBOOK_SECURED: '${secured}'
+- waitForAnimationToEnd
+- assertVisible:
+    id: '${story.id}'
+- assertScreenshot: '${screenshotPath}'
+`;
+      })
+      .join("\n");
+
+    const preamble = selectStorySync
+      ? `- openLink: '${baseUri}'
+- waitForAnimationToEnd
 `
-  )
-  .join("\n")}`;
+      : "";
+
+    const maestroContent = `appId: ${appId}
+name: Take screenshots of all Storybook stories
+---
+- stopApp: ${appId}
+${preamble}
+${storiesFlow}`;
 
     // Write the Maestro test file
     const maestroTestPath = path.join(outputDir, `${testName}.yaml`);
