@@ -1,6 +1,6 @@
 {
   "name": "rn-storybook-test",
-  "version": "0.0.5-0",
+  "version": "0.0.5-1",
   "type": "module",
   "description": "test utilities for react native storybook",
   "keywords": [
@@ -17,15 +17,15 @@
     "type": "git",
     "url": "https://github.com/dannyhw/rn-storybook-test"
   },
-  "main": "dist/cli.cjs",
+  "main": "dist/cli.mjs",
   "license": "MIT",
   "bin": {
-    "rn-storybook-test": "./dist/cli.cjs",
-    "compare-screenshots": "./dist/compare-screenshots.cjs",
-    "detect-ignore-regions": "./dist/detect-ignore-regions.cjs",
-    "gen-maestro": "./dist/gen-maestro.cjs",
-    "screenshot-stories": "./dist/screenshot-stories.cjs",
-    "screenshot-stories-ws": "./dist/screenshot-stories-ws.cjs"
+    "rn-storybook-test": "./dist/cli.mjs",
+    "compare-screenshots": "./dist/compare-screenshots.mjs",
+    "detect-ignore-regions": "./dist/detect-ignore-regions.mjs",
+    "gen-maestro": "./dist/gen-maestro.mjs",
+    "screenshot-stories": "./dist/screenshot-stories.mjs",
+    "screenshot-stories-ws": "./dist/screenshot-stories-ws.mjs"
   },
   "files": [
     "dist/**/*",
@@ -33,13 +33,13 @@
     "src/**/*"
   ],
   "scripts": {
-    "dev": "tsup --watch",
-    "build": "tsup"
+    "dev": "tsdown --watch",
+    "build": "tsdown"
   },
   "devDependencies": {
     "@types/react": "~19.1.15",
     "@types/ws": "^8.18.1",
-    "tsup": "^8.5.0",
+    "tsdown": "^0.21.0-beta.2",
     "typescript": "~5.9.2"
   },
   "dependencies": {
