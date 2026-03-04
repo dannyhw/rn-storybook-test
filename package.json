@@ -17,15 +17,15 @@
     "type": "git",
     "url": "https://github.com/dannyhw/rn-storybook-test"
   },
-  "main": "dist/cli.js",
+  "main": "dist/cli.cjs",
   "license": "MIT",
   "bin": {
-    "rn-storybook-test": "./dist/cli.js",
-    "compare-screenshots": "./dist/compare-screenshots.js",
-    "detect-ignore-regions": "./dist/detect-ignore-regions.js",
-    "gen-maestro": "./dist/gen-maestro.js",
-    "screenshot-stories": "./dist/screenshot-stories.js",
-    "screenshot-stories-ws": "./dist/screenshot-stories-ws.js"
+    "rn-storybook-test": "./dist/cli.cjs",
+    "compare-screenshots": "./dist/compare-screenshots.cjs",
+    "detect-ignore-regions": "./dist/detect-ignore-regions.cjs",
+    "gen-maestro": "./dist/gen-maestro.cjs",
+    "screenshot-stories": "./dist/screenshot-stories.cjs",
+    "screenshot-stories-ws": "./dist/screenshot-stories-ws.cjs"
   },
   "files": [
     "dist/**/*",
