@@ -10,7 +10,7 @@ function showHelp() {
   console.log(`
 Usage: npx rn-storybook-test screenshot-stories [options]
 
-Generate a Maestro flow that asserts Storybook screenshots and optionally run it.
+Generate Maestro capture + assert flows (using /select-story-sync/:storyId) and optionally run the assert flow.
 
 Options:
   -c, --config-dir <path>        Path to Storybook config directory (default: ./.rnstorybook)
@@ -19,10 +19,6 @@ Options:
   -u, --base-uri <uri>           Base URI for deep links (default: exp://127.0.0.1:8081/--/)
   -n, --test-name <name>         Name for the maestro test file (default: storybook-screenshots)
   -s, --screenshots-dir <path>   Directory containing reference screenshots (default: ./.maestro/screenshots)
-  --select-story-sync            Use Storybook REST endpoint /select-story-sync/:storyId instead of deep links
-  --host <host>                  Storybook host for select-story-sync (default: localhost)
-  --port <port>                  Storybook port for select-story-sync (default: 7007)
-  --secured                      Use HTTPS for select-story-sync endpoint
   --skip-generate                Skip generating maestro test file
   --skip-test                    Skip running maestro tests
   -h, --help                     Show this help message
@@ -30,7 +26,7 @@ Options:
 Examples:
   npx rn-storybook-test screenshot-stories
   npx rn-storybook-test screenshot-stories --skip-test
-  npx rn-storybook-test screenshot-stories --select-story-sync --host localhost --port 7007
+  npx rn-storybook-test screenshot-stories --skip-generate
 `);
 }
 
@@ -44,10 +40,6 @@ const run = async () => {
     "--base-uri": String,
     "--test-name": String,
     "--screenshots-dir": String,
-    "--select-story-sync": Boolean,
-    "--host": String,
-    "--port": Number,
-    "--secured": Boolean,
     "--skip-generate": Boolean,
     "--skip-test": Boolean,
 
@@ -73,10 +65,6 @@ const run = async () => {
   const testName = args["--test-name"] || "storybook-screenshots";
   const screenshotsDir =
     args["--screenshots-dir"] || path.join(outputDir, "screenshots");
-  const selectStorySync = args["--select-story-sync"] || false;
-  const host = args["--host"] || "localhost";
-  const port = args["--port"] || 7007;
-  const secured = args["--secured"] || false;
   const skipGenerate = args["--skip-generate"] || false;
   const skipTest = args["--skip-test"] || false;
 
@@ -101,10 +89,6 @@ const run = async () => {
         baseUri,
         testName,
         screenshotsRelativePath: screenshotsDir,
-        selectStorySync,
-        host,
-        port,
-        secured,
       });
 
       if (!success) {

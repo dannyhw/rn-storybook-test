@@ -16,7 +16,9 @@ bun add --dev rn-storybook-test
 
 ### `gen-maestro`
 
-Generate Maestro flows that use `assertScreenshot` for all your Storybook stories.
+Generate two Maestro flows for all your Storybook stories:
+- `<test-name>.capture.yaml` using `takeScreenshot` (baseline capture)
+- `<test-name>.yaml` using `assertScreenshot` (comparison/assertion)
 
 ```bash
 npx rn-storybook-test gen-maestro [options]
@@ -30,14 +32,10 @@ Options:
 - `-u, --base-uri <uri>` - Base URI for deep links (default: exp://127.0.0.1:8081/--/)
 - `-n, --test-name <name>` - Name for the maestro test file (default: storybook-screenshots)
 - `-s, --screenshots-dir <path>` - Directory containing reference screenshots (default: ./.maestro/screenshots)
-- `--select-story-sync` - Use Storybook REST endpoint `/select-story-sync/:storyId` instead of deep links
-- `--host <host>` - Storybook host for `--select-story-sync` (default: localhost)
-- `--port <port>` - Storybook port for `--select-story-sync` (default: 7007)
-- `--secured` - Use HTTPS for `--select-story-sync`
 
 ### `screenshot-stories`
 
-Generate a Maestro `assertScreenshot` flow for all stories and optionally run it.
+Generate the Maestro capture + assert flows and optionally run the assert flow.
 
 ```bash
 npx rn-storybook-test screenshot-stories [options]
@@ -119,25 +117,26 @@ This command shows you a list of available diff images and lets you select one t
 
 ### Using Maestro (iOS & Android)
 
-1. Generate the Maestro `assertScreenshot` flow:
+1. Generate the Maestro capture + assert flows:
 
 ```bash
 npx rn-storybook-test screenshot-stories --skip-test
 ```
 
-2. Run the generated flow:
+2. Run the generated assert flow:
 
 ```bash
 npx rn-storybook-test screenshot-stories
 ```
 
-Or use the Storybook REST story selection endpoint:
+3. Capture baseline screenshots with the generated capture flow:
 
 ```bash
-npx rn-storybook-test screenshot-stories --select-story-sync --host localhost --port 7007
+npx rn-storybook-test gen-maestro
+maestro test ./.maestro/storybook-screenshots.capture.yaml
 ```
 
-3. Reuse an existing flow in CI:
+4. Reuse an existing flow in CI:
 
 ```bash
 npx rn-storybook-test screenshot-stories --skip-generate

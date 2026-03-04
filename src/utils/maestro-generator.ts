@@ -9,10 +9,6 @@ export interface MaestroGeneratorOptions {
   baseUri: string;
   testName: string;
   screenshotsRelativePath?: string;
-  selectStorySync?: boolean;
-  host?: string;
-  port?: number;
-  secured?: boolean;
 }
 
 export async function generateMaestroTest(
@@ -25,10 +21,6 @@ export async function generateMaestroTest(
     baseUri,
     testName,
     screenshotsRelativePath = "screenshots",
-    selectStorySync = false,
-    host = "localhost",
-    port = 7007,
-    secured = false,
   } = options;
 
   try {
@@ -58,47 +50,31 @@ export async function generateMaestroTest(
     const selectStorySyncScriptName = `${testName}.select-story-sync.js`;
     const scriptPath = path.join(outputDir, selectStorySyncScriptName);
 
-    if (selectStorySync) {
-      const selectStorySyncScript = `const storyId = STORY_ID;
-const host = STORYBOOK_HOST;
-const port = STORYBOOK_PORT;
-const secured = STORYBOOK_SECURED === 'true';
-const protocol = secured ? 'https' : 'http';
-const endpoint = \`\${protocol}://\${host}:\${port}/select-story-sync/\${encodeURIComponent(storyId)}\`;
-const response = http.get(endpoint);
+    const selectStorySyncScript = `const storyId = STORY_ID;
+const endpoint = \`http://localhost:7007/select-story-sync/\${storyId}\`;
+const response = http.request(endpoint, {
+  method: 'POST',
+  body: '',
+});
 
 if (!(response.status >= 200 && response.status < 300)) {
   throw new Error(\`Failed to select story "\${storyId}" (status \${response.status})\`);
 }
 `;
 
-      writeFileSync(scriptPath, selectStorySyncScript);
-      console.log(`✅ Generated Maestro script: ${scriptPath}`);
-    }
+    writeFileSync(scriptPath, selectStorySyncScript);
+    console.log(`✅ Generated Maestro script: ${scriptPath}`);
 
-    const storiesFlow = stories
+    const assertFlow = stories
       .map((story) => {
         const screenshotName = story.name.replace(/ /g, "-");
         const screenshotPath = `${screenshotsRelativePath}/${screenshotName}.png`;
-
-        if (!selectStorySync) {
-          return `# Story ${story.name}
-- openLink: '${baseUri}?STORYBOOK_STORY_ID=${story.id}'
-- waitForAnimationToEnd
-- assertVisible:
-    id: '${story.id}'
-- assertScreenshot: '${screenshotPath}'
-`;
-        }
 
         return `# Story ${story.name}
 - runScript:
     file: '${selectStorySyncScriptName}'
     env:
       STORY_ID: '${story.id}'
-      STORYBOOK_HOST: '${host}'
-      STORYBOOK_PORT: '${port}'
-      STORYBOOK_SECURED: '${secured}'
 - waitForAnimationToEnd
 - assertVisible:
     id: '${story.id}'
@@ -107,24 +83,51 @@ if (!(response.status >= 200 && response.status < 300)) {
       })
       .join("\n");
 
-    const preamble = selectStorySync
-      ? `- openLink: '${baseUri}'
-- waitForAnimationToEnd
-`
-      : "";
+    const captureFlow = stories
+      .map((story) => {
+        const screenshotName = story.name.replace(/ /g, "-");
+        const screenshotPath = `${screenshotsRelativePath}/${screenshotName}`;
 
-    const maestroContent = `appId: ${appId}
+        return `# Story ${story.name}
+- runScript:
+    file: '${selectStorySyncScriptName}'
+    env:
+      STORY_ID: '${story.id}'
+- waitForAnimationToEnd
+- assertVisible:
+    id: '${story.id}'
+- takeScreenshot: '${screenshotPath}'
+`;
+      })
+      .join("\n");
+
+    const preamble = `- openLink: '${baseUri}'
+- waitForAnimationToEnd
+`;
+
+    const assertContent = `appId: ${appId}
 name: Take screenshots of all Storybook stories
 ---
 - stopApp: ${appId}
 ${preamble}
-${storiesFlow}`;
+${assertFlow}`;
 
-    // Write the Maestro test file
+    const captureContent = `appId: ${appId}
+name: Capture baseline screenshots of all Storybook stories
+---
+- stopApp: ${appId}
+${preamble}
+${captureFlow}`;
+
+    // Write the assert and capture Maestro flow files
     const maestroTestPath = path.join(outputDir, `${testName}.yaml`);
-    writeFileSync(maestroTestPath, maestroContent);
+    const maestroCapturePath = path.join(outputDir, `${testName}.capture.yaml`);
+
+    writeFileSync(maestroTestPath, assertContent);
+    writeFileSync(maestroCapturePath, captureContent);
 
     console.log(`✅ Generated Maestro test file: ${maestroTestPath}`);
+    console.log(`✅ Generated Maestro capture flow: ${maestroCapturePath}`);
     return true;
   } catch (error) {
     console.error("Error generating Maestro test file:", error);
