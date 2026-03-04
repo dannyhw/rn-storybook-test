@@ -19,6 +19,8 @@ Options:
   -u, --base-uri <uri>           Base URI for deep links (default: exp://127.0.0.1:8081/--/)
   -n, --test-name <name>         Name for the maestro test file (default: storybook-screenshots)
   -s, --screenshots-dir <path>   Directory containing reference screenshots (default: ./.maestro/screenshots)
+  --host <host>                  Storybook host for /select-story-sync/:storyId (default: localhost)
+  --port <port>                  Storybook port for /select-story-sync/:storyId (default: 7007)
   --skip-generate                Skip generating maestro test file
   --skip-test                    Skip running maestro tests
   -h, --help                     Show this help message
@@ -26,6 +28,7 @@ Options:
 Examples:
   npx rn-storybook-test screenshot-stories
   npx rn-storybook-test screenshot-stories --skip-test
+  npx rn-storybook-test screenshot-stories --host 192.168.1.10 --port 7007
   npx rn-storybook-test screenshot-stories --skip-generate
 `);
 }
@@ -40,6 +43,8 @@ const run = async () => {
     "--base-uri": String,
     "--test-name": String,
     "--screenshots-dir": String,
+    "--host": String,
+    "--port": Number,
     "--skip-generate": Boolean,
     "--skip-test": Boolean,
 
@@ -65,6 +70,8 @@ const run = async () => {
   const testName = args["--test-name"] || "storybook-screenshots";
   const screenshotsDir =
     args["--screenshots-dir"] || path.join(outputDir, "screenshots");
+  const host = args["--host"] || "localhost";
+  const port = args["--port"] || 7007;
   const skipGenerate = args["--skip-generate"] || false;
   const skipTest = args["--skip-test"] || false;
 
@@ -89,6 +96,8 @@ const run = async () => {
         baseUri,
         testName,
         screenshotsRelativePath: screenshotsDir,
+        host,
+        port,
       });
 
       if (!success) {

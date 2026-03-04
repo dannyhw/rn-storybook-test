@@ -32,6 +32,8 @@ Options:
 - `-u, --base-uri <uri>` - Base URI for deep links (default: exp://127.0.0.1:8081/--/)
 - `-n, --test-name <name>` - Name for the maestro test file (default: storybook-screenshots)
 - `-s, --screenshots-dir <path>` - Directory containing reference screenshots (default: ./.maestro/screenshots)
+- `--host <host>` - Storybook host for `/select-story-sync/:storyId` (default: localhost)
+- `--port <port>` - Storybook port for `/select-story-sync/:storyId` (default: 7007)
 
 ### `screenshot-stories`
 
@@ -134,6 +136,12 @@ npx rn-storybook-test screenshot-stories
 ```bash
 npx rn-storybook-test gen-maestro
 maestro test ./.maestro/storybook-screenshots.capture.yaml
+```
+
+If your Storybook channel server is not on localhost:7007:
+
+```bash
+npx rn-storybook-test gen-maestro --host 192.168.1.10 --port 7007
 ```
 
 4. Reuse an existing flow in CI:

@@ -17,6 +17,8 @@ Options:
   -u, --base-uri <uri>      Base URI for deep links (default: exp://127.0.0.1:8081/--/)
   -n, --test-name <name>    Name for the maestro test file (default: storybook-screenshots)
   -s, --screenshots-dir <path>   Directory containing reference screenshots (default: ./.maestro/screenshots)
+  --host <host>             Storybook host for /select-story-sync/:storyId (default: localhost)
+  --port <port>             Storybook port for /select-story-sync/:storyId (default: 7007)
   -h, --help                Show this help message
 
 Examples:
@@ -39,6 +41,8 @@ const run = async () => {
       '--base-uri': String,
       '--test-name': String,
       '--screenshots-dir': String,
+      "--host": String,
+      "--port": Number,
 
       // Aliases
       '-h': '--help',
@@ -67,6 +71,8 @@ const run = async () => {
   const baseUri = args["--base-uri"] || "exp://127.0.0.1:8081/--/";
   const testName = args["--test-name"] || "storybook-screenshots";
   const screenshotsDir = args["--screenshots-dir"] || `${outputDir}/screenshots`;
+  const host = args["--host"] || "localhost";
+  const port = args["--port"] || 7007;
 
   try {
     // Resolve config directory relative to current working directory
@@ -90,6 +96,8 @@ const run = async () => {
       baseUri,
       testName,
       screenshotsRelativePath: screenshotsDir,
+      host,
+      port,
     });
 
     if (!success) {

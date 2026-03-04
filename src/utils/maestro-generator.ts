@@ -9,6 +9,8 @@ export interface MaestroGeneratorOptions {
   baseUri: string;
   testName: string;
   screenshotsRelativePath?: string;
+  host?: string;
+  port?: number;
 }
 
 export async function generateMaestroTest(
@@ -21,6 +23,8 @@ export async function generateMaestroTest(
     baseUri,
     testName,
     screenshotsRelativePath = "screenshots",
+    host = "localhost",
+    port = 7007,
   } = options;
 
   try {
@@ -51,7 +55,7 @@ export async function generateMaestroTest(
     const scriptPath = path.join(outputDir, selectStorySyncScriptName);
 
     const selectStorySyncScript = `const storyId = STORY_ID;
-const endpoint = \`http://localhost:7007/select-story-sync/\${storyId}\`;
+const endpoint = \`http://${host}:${port}/select-story-sync/\${storyId}\`;
 const response = http.request(endpoint, {
   method: 'POST',
   body: '',
