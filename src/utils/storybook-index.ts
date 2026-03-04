@@ -2,8 +2,6 @@ import type { StoryIndex } from "storybook/internal/types";
 
 type BuildIndexFn = (configDir: string) => Promise<StoryIndex>;
 
-let cachedBuildIndexFn: BuildIndexFn | null = null;
-
 async function resolveBuildIndexFn(): Promise<BuildIndexFn> {
   const moduleName = "@storybook/react-native/node";
 
@@ -27,9 +25,6 @@ async function resolveBuildIndexFn(): Promise<BuildIndexFn> {
 export async function buildStorybookIndex(
   configDir: string,
 ): Promise<StoryIndex> {
-  if (!cachedBuildIndexFn) {
-    cachedBuildIndexFn = await resolveBuildIndexFn();
-  }
-
-  return cachedBuildIndexFn(configDir);
+  const buildIndexFn = await resolveBuildIndexFn();
+  return buildIndexFn(configDir);
 }
