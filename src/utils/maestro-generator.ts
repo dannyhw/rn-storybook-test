@@ -107,6 +107,10 @@ if (!(response.status >= 200 && response.status < 300)) {
 
     const preamble = `- openLink: '${baseUri}'
 - waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: '-wont be found-'
+    optional: true
+    timeout: 2500
 `;
 
     const assertContent = `appId: ${appId}
