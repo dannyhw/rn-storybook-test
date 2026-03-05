@@ -125,6 +125,8 @@ This command shows you a list of available diff images and lets you select one t
 npx rn-storybook-test screenshot-stories --skip-test
 ```
 
+The generated Maestro flows use only the screenshot file name. Maestro writes screenshots to its own output location.
+
 2. Run the generated assert flow:
 
 ```bash
