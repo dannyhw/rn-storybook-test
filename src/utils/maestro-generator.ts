@@ -31,6 +31,15 @@ export async function generateMaestroTest(
     // Ensure output directory exists
     mkdirSync(outputDir, { recursive: true });
 
+    const screenshotsPathFromOutputDir = path
+      .relative(
+        outputDir,
+        path.isAbsolute(screenshotsRelativePath)
+          ? screenshotsRelativePath
+          : path.resolve(process.cwd(), screenshotsRelativePath),
+      )
+      .replaceAll(path.sep, "/");
+
     // Generate Maestro test file content
     const stories = Object.values(index.entries)
       .filter(
@@ -72,7 +81,7 @@ if (!(response.status >= 200 && response.status < 300)) {
     const assertFlow = stories
       .map((story) => {
         const screenshotName = story.name.replace(/ /g, "-");
-        const screenshotPath = `${screenshotsRelativePath}/${screenshotName}.png`;
+        const screenshotPath = `${screenshotsPathFromOutputDir}/${screenshotName}.png`;
 
         return `# Story ${story.name}
 - runScript:
@@ -90,7 +99,7 @@ if (!(response.status >= 200 && response.status < 300)) {
     const captureFlow = stories
       .map((story) => {
         const screenshotName = story.name.replace(/ /g, "-");
-        const screenshotPath = `${screenshotsRelativePath}/${screenshotName}`;
+        const screenshotPath = `${screenshotsPathFromOutputDir}/${screenshotName}`;
 
         return `# Story ${story.name}
 - runScript:
