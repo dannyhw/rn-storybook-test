@@ -37,19 +37,19 @@
     "build": "tsdown"
   },
   "devDependencies": {
-    "@types/react": "~19.1.15",
+    "@types/react": "~19.2.14",
     "@types/ws": "^8.18.1",
-    "tsdown": "^0.21.0-beta.2",
+    "tsdown": "^0.21.0",
     "typescript": "~5.9.2"
   },
   "dependencies": {
     "arg": "^5.0.2",
-    "odiff-bin": "^4.0.0",
+    "odiff-bin": "^4.3.2",
     "pngjs": "^7.0.0",
-    "storybook": "10.3.0-alpha.13",
-    "@storybook/react-native": "10.3.0-canary-20260303225526",
+    "storybook": "10.3.0-alpha.14",
+    "@storybook/react-native": "10.3.0-canary-20260305205402",
     "websocket-polyfill": "^1.0.0",
-    "ws": "^8.18.3"
+    "ws": "^8.19.0"
   },
   "engines": {
     "node": ">=18.0.0"
