@@ -16,7 +16,9 @@ bun add --dev rn-storybook-test
 
 ### `gen-maestro`
 
-Generate Maestro test files for all your Storybook stories.
+Generate two Maestro flows for all your Storybook stories:
+- `<test-name>.capture.yaml` using `takeScreenshot` (baseline capture)
+- `<test-name>.yaml` using `assertScreenshot` (comparison/assertion)
 
 ```bash
 npx rn-storybook-test gen-maestro [options]
@@ -29,10 +31,13 @@ Options:
 - `-a, --app-id <id>` - App ID for maestro tests (default: host.exp.Exponent)
 - `-u, --base-uri <uri>` - Base URI for deep links (default: exp://127.0.0.1:8081/--/)
 - `-n, --test-name <name>` - Name for the maestro test file (default: storybook-screenshots)
+- `-s, --screenshots-dir <path>` - Directory containing reference screenshots (default: ./.maestro/screenshots)
+- `--host <host>` - Storybook host for `/select-story-sync/:storyId` (default: localhost)
+- `--port <port>` - Storybook port for `/select-story-sync/:storyId` (default: 7007)
 
 ### `screenshot-stories`
 
-Take screenshots of all Storybook stories using Maestro and compare them against baselines.
+Generate the Maestro capture + assert flows and optionally run the assert flow.
 
 ```bash
 npx rn-storybook-test screenshot-stories [options]
@@ -41,17 +46,8 @@ npx rn-storybook-test screenshot-stories [options]
 Options:
 
 - All options from `gen-maestro` plus:
-- `-b, --baseline-dir <path>` - Directory containing baseline screenshots (default: ./.maestro/baseline)
-- `-s, --screenshots-dir <path>` - Directory for new screenshots (default: ./.maestro/screenshots)
-- `-d, --diffs-dir <path>` - Directory for diff images (default: ./.maestro/diffs)
-- `-t, --tolerance <number>` - Tolerance for image comparison (default: 2.5)
-- `--strict` - Use strict image comparison
 - `--skip-generate` - Skip generating maestro test file
 - `--skip-test` - Skip running maestro tests
-- `--skip-compare` - Skip comparing screenshots
-- `--update-baseline` - Copy current screenshots to baseline directory
-- `--html-report` - Generate HTML comparison report (when comparing)
-- `--ignore-regions <regions>` - Ignore custom regions (format: "x,y,w,h;x2,y2,w2,h2")
 
 ### `screenshot-stories-ws`
 
@@ -123,25 +119,34 @@ This command shows you a list of available diff images and lets you select one t
 
 ### Using Maestro (iOS & Android)
 
-1. Take screenshots of all stories and set them as baseline:
+1. Generate the Maestro capture + assert flows:
 
 ```bash
-npx rn-storybook-test screenshot-stories --update-baseline
+npx rn-storybook-test screenshot-stories --skip-test
 ```
 
-2. After making changes, take new screenshots and compare against baseline:
+The generated Maestro flows use only the screenshot file name. Maestro writes screenshots to its own output location.
+
+2. Run the generated assert flow:
 
 ```bash
 npx rn-storybook-test screenshot-stories
 ```
 
-3. If changes are intentional, update the baseline:
+3. Capture baseline screenshots with the generated capture flow:
 
 ```bash
-npx rn-storybook-test screenshot-stories --update-baseline
+npx rn-storybook-test gen-maestro
+maestro test ./.maestro/storybook-screenshots.capture.yaml
 ```
 
-4. For CI, you might want to skip generation if test files already exist:
+If your Storybook channel server is not on localhost:7007:
+
+```bash
+npx rn-storybook-test gen-maestro --host 192.168.1.10 --port 7007
+```
+
+4. Reuse an existing flow in CI:
 
 ```bash
 npx rn-storybook-test screenshot-stories --skip-generate
@@ -165,8 +170,8 @@ npx rn-storybook-test screenshot-stories-ws --deep-link "exp://127.0.0.1:8081"
 ### Alternative workflow using separate commands
 
 ```bash
-# Take screenshots
-npx rn-storybook-test screenshot-stories --skip-compare
+# Take screenshots (WebSocket mode)
+npx rn-storybook-test screenshot-stories-ws --skip-compare
 
 # Update baseline separately
 npx rn-storybook-test compare-screenshots --update-baseline
@@ -174,12 +179,9 @@ npx rn-storybook-test compare-screenshots --update-baseline
 
 ## HTML Reports
 
-The `screenshot-stories`, `screenshot-stories-ws`, and `compare-screenshots` commands support generating detailed HTML comparison reports with the `--html-report` flag:
+The `screenshot-stories-ws` and `compare-screenshots` commands support generating detailed HTML comparison reports with the `--html-report` flag:
 
 ```bash
-# Generate HTML report when comparing screenshots (Maestro)
-npx rn-storybook-test screenshot-stories --html-report
-
 # Generate HTML report when comparing screenshots (WebSocket)
 npx rn-storybook-test screenshot-stories-ws --html-report
 
@@ -198,14 +200,14 @@ The report is saved as `screenshot-comparison-report.html` in the output directo
 
 ## Custom Ignore Regions
 
-When running screenshot tests, you may encounter differences in system UI elements (like status bars, home indicators, or other dynamic content) that cause false positives. You can use the `--ignore-regions` flag to specify custom areas to ignore during comparison:
+When running screenshot comparison tests, you may encounter differences in system UI elements (like status bars, home indicators, or other dynamic content) that cause false positives. You can use the `--ignore-regions` flag to specify custom areas to ignore during comparison:
 
 ```bash
 # Ignore specific regions when comparing (format: "x,y,width,height")
-npx rn-storybook-test screenshot-stories --ignore-regions "0,800,390,44"
+npx rn-storybook-test screenshot-stories-ws --ignore-regions "0,800,390,44"
 
 # Multiple regions separated by semicolons
-npx rn-storybook-test screenshot-stories --ignore-regions "0,800,390,44;10,10,50,50"
+npx rn-storybook-test screenshot-stories-ws --ignore-regions "0,800,390,44;10,10,50,50"
 
 # Or when running comparison separately
 npx rn-storybook-test compare-screenshots --ignore-regions "0,800,390,44"
@@ -240,7 +242,7 @@ If you're seeing false positives from system UI differences, you can use the `de
 1. **First, run comparison without ignore regions to generate diff images:**
 
    ```bash
-   npx rn-storybook-test screenshot-stories
+   npx rn-storybook-test screenshot-stories-ws
    ```
 
 2. **Interactively select and analyze a diff image:**
@@ -253,7 +255,7 @@ If you're seeing false positives from system UI differences, you can use the `de
 
 3. **Use the suggested regions in future comparisons:**
    ```bash
-   npx rn-storybook-test screenshot-stories --ignore-regions "0,800,390,44"
+   npx rn-storybook-test screenshot-stories-ws --ignore-regions "0,800,390,44"
    ```
 
 **Example interaction:**

@@ -2,9 +2,9 @@
 import arg from "arg";
 import { existsSync, mkdirSync } from "fs";
 import path from "path";
-import { buildIndex } from "storybook/internal/core-server";
 import type { IndexEntry } from "storybook/internal/types";
 import { snapshotStorybookViaWebsocket } from "./utils/websocket-snapshot.js";
+import { buildStorybookIndex } from "./utils/storybook-index.js";
 import {
   compareScreenshots,
   updateBaseline as updateBaselineUtil,
@@ -124,9 +124,7 @@ const run = async () => {
       clearDirectory(resolvedScreenshotsDir);
       mkdirSync(resolvedScreenshotsDir, { recursive: true });
 
-      const index = await buildIndex({
-        configDir: resolvedConfigDir,
-      });
+      const index = await buildStorybookIndex(resolvedConfigDir);
 
       const entries = Object.values(index.entries).filter(
         (entry: IndexEntry) =>
